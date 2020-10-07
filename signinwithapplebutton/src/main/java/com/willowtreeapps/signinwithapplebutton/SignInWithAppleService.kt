@@ -4,6 +4,7 @@ import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
 import androidx.fragment.app.FragmentManager
+import com.willowtreeapps.signinwithapplebutton.constants.Strings
 import com.willowtreeapps.signinwithapplebutton.view.SignInWebViewDialogFragment
 import java.util.*
 
@@ -14,17 +15,10 @@ class SignInWithAppleService(
     private val callback: (SignInWithAppleResult) -> Unit
 ) {
 
-    constructor(
-        fragmentManager: FragmentManager,
-        fragmentTag: String,
-        configuration: SignInWithAppleConfiguration,
-        callback: SignInWithAppleCallback
-    ) : this(fragmentManager, fragmentTag, configuration, callback.toFunction())
-
     init {
         val fragmentIfShown =
             fragmentManager.findFragmentByTag(fragmentTag) as? SignInWebViewDialogFragment
-        fragmentIfShown?.configure(callback)
+        fragmentIfShown?.configureCallback(callback)
     }
 
     internal data class AuthenticationAttempt(
@@ -70,10 +64,10 @@ class SignInWithAppleService(
                 state: String = UUID.randomUUID().toString()
             ): AuthenticationAttempt {
                 val authenticationUri = Uri
-                    .parse("https://appleid.apple.com/auth/authorize")
+                    .parse("https://${Strings.APPLEID_URL}/auth/authorize")
                     .buildUpon().apply {
                         appendQueryParameter("response_type", "code")
-                        appendQueryParameter("v", "1.1.6")
+                        appendQueryParameter("v", "1.1.6") // TODO: Change version
                         appendQueryParameter("client_id", configuration.clientId)
                         appendQueryParameter("redirect_uri", configuration.redirectUri)
                         appendQueryParameter("scope", configuration.scope)
@@ -90,7 +84,8 @@ class SignInWithAppleService(
 
     fun show() {
         val fragment = SignInWebViewDialogFragment.newInstance(AuthenticationAttempt.create(configuration))
-        fragment.configure(callback)
+        fragment.configureCallback(callback)
+        fragment.configure(configuration)
         fragment.show(fragmentManager, fragmentTag)
     }
 }
